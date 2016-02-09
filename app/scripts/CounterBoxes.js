@@ -2,6 +2,12 @@
  * Created by Mike on 1/23/2016.
  */
 
+
+/**
+ *   Initial simple row counting app.
+ */
+
+
 var $btnCreate = $("#btnBoxCount");
 var $container = $("#counterBoxes");
 var $inputBoxCount = $("#inputBoxCount");
@@ -85,6 +91,11 @@ function createCounterButtons(quantity) {
   }
 }
 
+
+/**
+ * CounterButton() creates the logical counterbutton object.
+ * @constructor
+ */
 function CounterButton() {
   var _container = null;
   Object.defineProperty(this, "container", {
@@ -200,7 +211,6 @@ function CounterButton() {
 
   Object.defineProperty(this, "html", {
     get:  function () {
-
             var labelDivStyle = "style='position:relative; width:100%; height:100%; text-align: center'";
             var imageDivStyle = "style='position:relative; top:-30px; left:0; z-index:1; display:none;'";
             var imageStyle = "style='height:25px; width:30px; margin: auto;'";
@@ -238,11 +248,3 @@ function CounterButton() {
 }
 
 
-//Exceptions
-function InvalidArgumentException(procedure, type, param, value) {
-  this.message = "Invalid Argument Exception @ " + procedure + ".  " + param + " requires " + type + "(" + value + ")";
-}
-
-function NotImplementedException(procedure) {
-  this.message = "Not Implemented Exception @ " + procedure;
-}
