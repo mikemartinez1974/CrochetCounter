@@ -13,11 +13,12 @@
 var pdoc = new PatternDocument();
 
 function btnCreateSection_click() {
-  var input = $("#txtSectionType")[0].value;
+  var $sectionSelector = $("#selSectionType")[0];
+  var input = $sectionSelector.options[$sectionSelector.selectedIndex].value;
   //alert(input);
-  if(input == "Text Section") {
-    pdoc.addBasicSection();
-  }else if (input == "Pattern Section") {
+  if(input === "Text Section") {
+    pdoc.addTextSection();
+  }else if (input === "Pattern Section") {
     pdoc.addPatternSection();
   }
   else {
@@ -38,14 +39,12 @@ function PatternDocument() {
   });
 
   var _html = '<div id="PatternDocument">' +
-      '<form>' +
       ' <input type="text" list="sections" >' +
       ' <datalist id="sections">' +
       '   <option>Text Section</option>' +
       '   <option>Pattern Section</option>' +
       ' </datalist>' +
-      ' <button id=btnCreateSection>Create</button>' +
-      '</form>' +
+      ' <button id=btnCreateSection>Create New Section</button>' +
       '</div>';
   Object.defineProperty(this, "html", {
     get: function() {
@@ -56,7 +55,7 @@ function PatternDocument() {
         _html = _val;
       }
       else {
-        throw new InvalidArgumentException("BasicSection.html (set)","(string)HTML","value", val);
+        throw new InvalidArgumentException("TextSection.html (set)","(string)HTML","value", val);
       }
     }
   });
@@ -68,21 +67,19 @@ function PatternDocument() {
     }
   });
 
-  this.addBasicSection = function () {
-    //throw new NotImplementedException("PatternDocument.addBasicSection()");
-    var newSection = new BasicSection(this.sections.length);
-    newSection.headerText = "A new basic section (" + this.sections.length + ")";
+  this.addTextSection = function () {
+    var newSection = new TextSection(this.sections.length);
+    newSection.headerText = "A new text section (" + this.sections.length + ")";
     newSection.text = "some text goes here.";
-    _sections.push(newSection);
+    newSection.index = _sections.push(newSection) - 1;
     $("#PatternDocument").append(newSection.html);
   };
 
   this.addPatternSection = function () {
-    //throw new NotImplementedException("PatternDocument.addPatternSection()");
     var newSection = new PatternSection(this.sections.length);
-    newSection.headerText = "A new pattern section";
+    newSection.headerText = "A new pattern section (" + this.sections.length + ")";
     newSection.text = "some instructions go here.";
-    _sections.push(newSection);
+    newSection.index = _sections.push(newSection) - 1;
     newSection.render();
   };
 
@@ -93,12 +90,34 @@ function PatternDocument() {
  *
  * @constructor
  */
-function BasicSection(id) {
-  var _id = id;
+function TextSection() {
+  var thisSection = this;
+
   Object.defineProperty(this, "id", {
     get: function(){
-      return _id;
+      return "TextSection_" + this.index;
     }
+  });
+
+  var _document = pdoc;
+  Object.defineProperty(this,"patternDocument", {
+    get: function() {
+      return _document;
+    },
+    set: function(val) {
+      if(val instanceof PatternDocument) {
+        _document = val;
+      }
+      else {
+        throw new InvalidArgumentException("PatternSection.patternDocument","(object)PatternDocument","value",val);
+      }
+    }
+  });
+
+  var _index = null;
+  Object.defineProperty(this,"index", {
+    get: function() { return _index },
+    set: function(val) { _index = val; }
   });
 
   var _headerText = "Section Header";
@@ -123,92 +142,74 @@ function BasicSection(id) {
     }
   });
 
-  //var _html = '<div id="basicSection_' + _id + '"></div>';
+  var _html = null;
   Object.defineProperty(this, "html", {
     get: function() {
-      console.log(_headerText, _text);
-      return '<div id="basicSection_' + _id + '"><h1>' + _headerText + '</h1><p>' + _text + '</p></div>';
-      //return _html;
+      if(_html === null) {
+        _html = '<div id="' + this.id + '"><h1 contenteditable="true">' + this.headerText + '</h1><p contenteditable="true">' + this.text + '</p></div>';
+      }
+      return _html
     }
-    //,set: function(val) {
-    //  if(checkHTML(val)) {
-    //    _html = _val;
-    //  }
-    //  else {
-    //    throw new InvalidArgumentException("BasicSection.html (set)","(string)HTML","value", val);
-    //  }
-    //}
-  });
-}
-
-function PatternSection (id) {
-  var _id = id;
-  Object.defineProperty(this,"id",{
-    get: function() {
-      return this.patternDocument.id + "_patternSection" + _id;
-    }
-  });
-
-  var _document = pdoc;
-  Object.defineProperty(this,"patternDocument", {
-    get: function() {
-      return _document;
-    },
-    set: function(val) {
-      if(val instanceof PatternDocument) {
-        _document = val;
+    ,set: function(val) {
+      if(checkHTML(val)) {
+        _html = _val;
       }
       else {
-        throw new InvalidArgumentException("PatternSection.patternDocument","(object)PatternDocument","value",val);
+        throw new InvalidArgumentException("TextSection.html (set)","(string)HTML","value", val);
       }
     }
   });
 
+  this.render = function() {
+    $("#" + this.patternDocument.id).append(this.html);
+  }
+}
+
+function PatternSection () {
+  var thisSection = this;
+
+  Object.defineProperty(this, "id",{
+    get: function() {
+      return "Pattern_" + this.index;
+    }
+  });
 
   Object.defineProperty(this, "html",{
     get: function() {
       var _html = '<div id="' + this.id + '">' +
-        ' <div id="' + this.id + '_counterBoxesControls">' +
-        '   <input id="' + this.id + '_inputBoxCount" type="number" min="0" step="1">' +
-        '   <button id="' + this.id + '_btnBoxCount" type="button">Create</button>' +
-        ' </div>' +
-        ' <div id="' + this.id + '_counterBoxes"></div>' +
-        ' <hr>' +
-        ' <div id="' + this.id + '_pb"></div></div>';
+        ' <h1 contenteditable="true">' + this.headerText + '</h1>' +
+        ' <p contentEditable="true">' + this.text + '</p>'+
+        ' <input id="inputBoxCount" type="number" min="0" step="1">' +
+        ' <button id="btnBoxCount" type="button">Create</button>' +
+        ' <div id="counterBoxes"></div>' +
+        ' <div id="pb"></div></div>';
       return _html;
     }
-    //,set: function(val) {
-    //  if(checkHTML(val)){
-    //    _html = val;
-    //  }
-    //  else{
-    //    throw new InvalidArgumentException("PatternSection.html","(string)HTML","value", val);
-    //  }
-    //}
   });
 
   var _counterBoxFactory = new CounterBoxFactory();
   _counterBoxFactory.container = this;
+  Object.defineProperty(this, "buttonFactory", {
+    get: function() { return _counterBoxFactory }
+  });
 
   function btnBoxCount_Click(event){
-    var sectionid = $("#" + this.id).parent().parent()[0].id;
-    var $control = $("#" + sectionid + "_inputBoxCount")[0];
-    var quantity = parseInt($control.value);
-    _counterBoxFactory.createButtons(quantity);
+    var $inputQuantity = $("#" + thisSection.id + " > #inputBoxCount")[0];
+    var quantity = parseInt($inputQuantity.value);
+    thisSection.buttonFactory.createButtons(quantity);
     return false;
   }
 
   this.render = function() {
-    $("#" + this.patternDocument.id).append(this.html);
-    $("#" + this.id + "_btnBoxCount").on("click", btnBoxCount_Click);
+    $("#" + thisSection.patternDocument.id).append(thisSection.html);
+    $("#" + thisSection.id + " > #btnBoxCount").on("click", btnBoxCount_Click);
   };
 
-  //_render();
 }
-PatternSection.prototype = new BasicSection();
+PatternSection.prototype = new TextSection();
 
 function CounterBoxFactory() {
-  var that = this;
+  var thisFactory = this;
 
   Object.defineProperty(this,"id",{
     get: function() {
@@ -222,7 +223,7 @@ function CounterBoxFactory() {
       return _container;
     },
     set: function(val) {
-      if(val instanceof BasicSection){
+      if(val instanceof TextSection){
         _container = val;
       }
       else {
@@ -249,28 +250,25 @@ function CounterBoxFactory() {
   });
 
   this.createButtons = function (boxCount) {
-
+    console.log(this);
     //empty the collection of buttons.
     _buttons = [];
-    var $sectionContainer = $("#" + _container.id + "_counterBoxes");
-    $sectionContainer.empty();
-    _pb = new ProgressBar.Line("#" + $sectionContainer.parent()[0].id + "_pb",{color:'#f00', strokeWidth: 5});
+    var $buttonContainer = $("#" + _container.id + " > #counterBoxes");
+    $buttonContainer.empty();
+    _pb = new ProgressBar.Line("#" + _container.id + " > #pb",{color:'#f00', strokeWidth: 1});
 
     //create a new collection of buttons === boxcount param.
     for(var i = 1; i<=boxCount; i++){
       _buttons[i] = new CounterBox(i);
-      _buttons[i].factory = that;
+      _buttons[i].factory = thisFactory;
     }
 
     //add each button to the document.
 
     _buttons.forEach(function(counterbox) {
-      $sectionContainer.append(counterbox.html);
-      //counterbox.on("click", counterbox, counterbox.click);
-      console.log(counterbox.id);
-      console.log(counterbox.html);
+      $buttonContainer.append(counterbox.html);
       $("#" + counterbox.id).on("click", counterbox, counterbox.click);
-
+      console.log(counterbox.id, counterbox);
     });
   }
 }
@@ -283,11 +281,11 @@ function CounterBoxFactory() {
  * @constructor
  */
 function CounterBox(labelText,forecolor,backcolor) {
-  var that = this;
+  var thisCounterBox = this;
 
   Object.defineProperty(this,"id", {
     get: function() {
-      return that.factory.id + "_box" + that.labelText;
+      return thisCounterBox.factory.container.id + "_box_" + thisCounterBox.labelText;
     }
   });
 
@@ -344,52 +342,64 @@ function CounterBox(labelText,forecolor,backcolor) {
       var _labelDivStyle = "style='position:relative; width:100%; height:100%; text-align: center'";
       var _imageDivStyle = "style='position:relative; top:-30px; left:0; z-index:1; display:none;'";
       var _imageStyle = "style='height:25px; width:30px; margin: auto;'";
-      var _boxStyle = "style='float:left; color:" + _fcolor + "; background-color: " + _bcolor + "; height: 25px; width: 30px; margin-top:2px; margin-left:2px; border: solid black 1px; padding-top:5px;'";
-      var _imageMarkup = "<img id='image" + _labelText + "' src='images/transCheck.png' " + _imageStyle + ">";
-      var _labeldiv = "<div id='label" + _labelText + "' " + _labelDivStyle + " >" + _labelText + "</div>";
-      var _imagediv = "<div id='image" + _labelText + "' " + _imageDivStyle + " >" + _imageMarkup + "</div>";
-      var _counterBoxMarkup = "<div id='" + this.id + "' " + _boxStyle + ">" + _labeldiv + _imagediv + "</div>";
+      var _boxStyle = "style='float:left; color:" + thisCounterBox.foreColor + "; background-color: " + thisCounterBox.backColor + "; height: 25px; width: 30px; margin-top:2px; margin-left:2px; border: solid black 1px; padding-top:5px;'";
+      var _imageMarkup = "<img id='" + thisCounterBox.getImageId() + "' src='images/transCheck.png' " + _imageStyle + ">";
+      var _labeldiv = "<div id='" + thisCounterBox.getLabelId() + "' " + _labelDivStyle + " >" + _labelText + "</div>";
+      var _imagediv = "<div id='" + thisCounterBox.getImageDivId() + "' " + _imageDivStyle + " >" + _imageMarkup + "</div>";
+      var _counterBoxMarkup = "<div id='" + thisCounterBox.id + "' " + _boxStyle + ">" + _labeldiv + _imagediv + "</div>";
       return _counterBoxMarkup;
     }
   });
 
   Object.defineProperty(this, "index", {
     get: function() {
-      return that.factory.buttons.indexOf(this);
+      return thisCounterBox.factory.buttons.indexOf(this)
     }
   });
 
   this.factory = null;
 
+  this.getLabelId = function() {
+    return thisCounterBox.id + "_label" + thisCounterBox.labelText
+  };
+
+  this.getImageId = function() {
+    return thisCounterBox.id + "_image"
+  };
+
+  this.getImageDivId = function() {
+    return thisCounterBox.id + "_imageDiv"
+  };
+
   this.click = function (event) {
-    //event.stopPropagation();
-    //event.preventDefault();
+    //var thisButton = event.data;
     console.log(event);
-    console.log(event.data);
-    var $image = $("#image" + that.factory.buttons.indexOf(that));
-    var css = $image.css("display");
+    event.stopPropagation();
+    event.preventDefault();
+    var $imageDiv = $("#" + thisCounterBox.getImageDivId());
+    var css = $imageDiv.css("display");
     //var action = null;
     if (css === "none") {
-      $image.css({display: "block"});
+      $imageDiv.css({display: "block"});
       //action = "clicked"
     }
     else {
-      $image.css({display: "none"});
+      $imageDiv.css({display: "none"});
       //action = "unclicked";
     }
 
-    that.factory.buttons.forEach(function (button) {
+    thisCounterBox.factory.buttons.forEach(function (otherButton) {
 
-      if (button.index < that.index) {
-        $("#image" + button.index).css("display", "block");
+      if (otherButton.index < thisCounterBox.index) {
+        $("#" + otherButton.getImageDivId()).css("display", "block");
       }
-      else if (button.index > that.index) {
-        $("#image" + button.index).css("display", "none");
+      else if (otherButton.index > thisCounterBox.index) {
+        $("#" + otherButton.getImageDivId()).css("display", "none");
       }
 
     });
 
-    that.factory.progressBar.animate((event.data.index -1) / that.factory.buttons.length);
+    thisCounterBox.factory.progressBar.animate((event.data.index -1) / thisCounterBox.factory.buttons.length);
 
     //return { index:_labelText, id: "box" + _labelText, markup: _counterBoxMarkup }
   }
@@ -407,7 +417,7 @@ function CounterBox(labelText,forecolor,backcolor) {
 //function GuageSection() {
 //
 //}
-//GuageSection.prototype = new BasicSection();
+//GuageSection.prototype = new TextSection();
 //
 //function TextSection() {
 //  var _bodytext = "";
@@ -422,14 +432,14 @@ function CounterBox(labelText,forecolor,backcolor) {
 //    }
 //  })
 //}
-//TextSection.prototype = new BasicSection();
+//TextSection.prototype = new TextSection();
 //
 //function MaterialsSection() {
 //
 //}
-//MaterialsSection.prototype = new BasicSection();
+//MaterialsSection.prototype = new TextSection();
 //
 //function InstructionSection () {
 //
 //}
-//InstructionSection.prototype = new BasicSection();
+//InstructionSection.prototype = new TextSection();
