@@ -68,7 +68,7 @@ function PatternDocument() {
   });
 
   this.addTextSection = function () {
-    var newSection = new TextSection(this.sections.length);
+    var newSection = new TextSection();
     newSection.headerText = "A new text section (" + this.sections.length + ")";
     newSection.text = "some text goes here.";
     newSection.index = _sections.push(newSection) - 1;
@@ -76,7 +76,7 @@ function PatternDocument() {
   };
 
   this.addPatternSection = function () {
-    var newSection = new PatternSection(this.sections.length);
+    var newSection = new PatternSection();
     newSection.headerText = "A new pattern section (" + this.sections.length + ")";
     newSection.text = "some instructions go here.";
     newSection.index = _sections.push(newSection) - 1;
@@ -86,7 +86,7 @@ function PatternDocument() {
   //$("body").append(_html);
 }
 
-/**
+/** TextSection
  *
  * @constructor
  */
@@ -194,9 +194,10 @@ function PatternSection () {
   });
 
   function btnBoxCount_Click(event){
-    var $inputQuantity = $("#" + thisSection.id + " > #inputBoxCount")[0];
+    //var $inputQuantity = $("#" + thisSection.id + " > #inputBoxCount")[0];
+    var $inputQuantity = $("#" + event.target.parentElement.id + " > #inputBoxCount")[0];
     var quantity = parseInt($inputQuantity.value);
-    thisSection.buttonFactory.createButtons(quantity);
+    thisSection.buttonFactory.createButtons(quantity,event);
     return false;
   }
 
@@ -249,16 +250,16 @@ function CounterBoxFactory() {
     }
   });
 
-  this.createButtons = function (boxCount) {
+  this.createButtons = function (quantity,event) {
     console.log(this);
     //empty the collection of buttons.
     _buttons = [];
-    var $buttonContainer = $("#" + _container.id + " > #counterBoxes");
+    var $buttonContainer = $("#" + event.target.parentElement.id + " > #counterBoxes");
     $buttonContainer.empty();
-    _pb = new ProgressBar.Line("#" + _container.id + " > #pb",{color:'#f00', strokeWidth: 1});
+    _pb = new ProgressBar.Line("#" + event.target.parentElement.id + " > #pb",{color:'#f00', strokeWidth: 1});
 
     //create a new collection of buttons === boxcount param.
-    for(var i = 1; i<=boxCount; i++){
+    for(var i = 1; i<=quantity; i++){
       _buttons[i] = new CounterBox(i);
       _buttons[i].factory = thisFactory;
     }
@@ -267,8 +268,8 @@ function CounterBoxFactory() {
 
     _buttons.forEach(function(counterbox) {
       $buttonContainer.append(counterbox.html);
-      $("#" + counterbox.id).on("click", counterbox, counterbox.click);
-      console.log(counterbox.id, counterbox);
+      var selector = "#" + event.target.parentElement.id + " > #counterBoxes > #" + counterbox.id;
+      $(selector).on("click", counterbox, counterbox.click);
     });
   }
 }
@@ -285,7 +286,7 @@ function CounterBox(labelText,forecolor,backcolor) {
 
   Object.defineProperty(this,"id", {
     get: function() {
-      return thisCounterBox.factory.container.id + "_box_" + thisCounterBox.labelText;
+      return "box_" + thisCounterBox.labelText;
     }
   });
 
@@ -344,8 +345,8 @@ function CounterBox(labelText,forecolor,backcolor) {
       var _imageStyle = "style='height:25px; width:30px; margin: auto;'";
       var _boxStyle = "style='float:left; color:" + thisCounterBox.foreColor + "; background-color: " + thisCounterBox.backColor + "; height: 25px; width: 30px; margin-top:2px; margin-left:2px; border: solid black 1px; padding-top:5px;'";
       var _imageMarkup = "<img id='" + thisCounterBox.getImageId() + "' src='images/transCheck.png' " + _imageStyle + ">";
-      var _labeldiv = "<div id='" + thisCounterBox.getLabelId() + "' " + _labelDivStyle + " >" + _labelText + "</div>";
-      var _imagediv = "<div id='" + thisCounterBox.getImageDivId() + "' " + _imageDivStyle + " >" + _imageMarkup + "</div>";
+      var _labeldiv = "<div id='labelDiv' " + _labelDivStyle + " >" + _labelText + "</div>";
+      var _imagediv = "<div id='imageDiv' " + _imageDivStyle + " >" + _imageMarkup + "</div>";
       var _counterBoxMarkup = "<div id='" + thisCounterBox.id + "' " + _boxStyle + ">" + _labeldiv + _imagediv + "</div>";
       return _counterBoxMarkup;
     }
@@ -372,11 +373,11 @@ function CounterBox(labelText,forecolor,backcolor) {
   };
 
   this.click = function (event) {
-    //var thisButton = event.data;
-    console.log(event);
-    event.stopPropagation();
-    event.preventDefault();
-    var $imageDiv = $("#" + thisCounterBox.getImageDivId());
+    //todo: if later I want to update the objects, make sure to do it in counterbox.click.
+    var currentSectionId = $(this).parent().parent()[0].id;
+    var sectionIndex = currentSectionId.split("_")[1];
+    var $thisButton = $("#" + currentSectionId + " #" + $(this)[0].id);
+    var $imageDiv = $("#" + currentSectionId + " #" + $(this)[0].id + " #imageDiv");
     var css = $imageDiv.css("display");
     //var action = null;
     if (css === "none") {
@@ -388,19 +389,25 @@ function CounterBox(labelText,forecolor,backcolor) {
       //action = "unclicked";
     }
 
-    thisCounterBox.factory.buttons.forEach(function (otherButton) {
-
-      if (otherButton.index < thisCounterBox.index) {
-        $("#" + otherButton.getImageDivId()).css("display", "block");
+    var clickedIndex = parseInt($thisButton[0].id.split("_")[1]);
+    var sibIndex = null, $sibImageDiv = null, sibCss = null;
+    var $siblingButtons = $thisButton.parent().children().not("[id='" + $thisButton[0].id + "']");
+    $siblingButtons.each(function(index,element){
+      sibIndex = parseInt(element.id.split("_")[1]);
+      $sibImageDiv = $(element).children().last();
+      sibCss = $sibImageDiv.css("display");
+      if(clickedIndex > sibIndex) {
+        $sibImageDiv.css("display","block");
       }
-      else if (otherButton.index > thisCounterBox.index) {
-        $("#" + otherButton.getImageDivId()).css("display", "none");
+      else if(sibIndex > clickedIndex) {
+        $sibImageDiv.css("display","none");
       }
-
     });
 
-    thisCounterBox.factory.progressBar.animate((event.data.index -1) / thisCounterBox.factory.buttons.length);
+    var section = pdoc.sections[sectionIndex];
+    section.buttonFactory.progressBar.animate((event.data.index -1) / thisCounterBox.factory.buttons.length);
 
+    return false;
     //return { index:_labelText, id: "box" + _labelText, markup: _counterBoxMarkup }
   }
 }
