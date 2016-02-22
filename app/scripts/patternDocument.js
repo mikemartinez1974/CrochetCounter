@@ -12,21 +12,7 @@
 
 var pdoc = new PatternDocument();
 
-function btnCreateSection_click() {
-  var $sectionSelector = $("#selSectionType")[0];
-  var input = $sectionSelector.options[$sectionSelector.selectedIndex].value;
-  //alert(input);
-  if(input === "Text Section") {
-    pdoc.addTextSection();
-  }else if (input === "Pattern Section") {
-    pdoc.addPatternSection();
-  }
-  else {
-    alert("Invalid Section Type.");
-  }
 
-  return false;
-}
 
 /**
  *
@@ -39,12 +25,11 @@ function PatternDocument() {
   });
 
   var _html = '<div id="PatternDocument">' +
-      ' <input type="text" list="sections" >' +
-      ' <datalist id="sections">' +
+      ' <select id="selSectionType">' +
       '   <option>Text Section</option>' +
-      '   <option>Pattern Section</option>' +
-      ' </datalist>' +
-      ' <button id=btnCreateSection>Create New Section</button>' +
+      '   <option>Pattern Section</option>'+
+      ' </select>' +
+      ' <button id="btnCreateSection">Create New Section</button>' +
       '</div>';
   Object.defineProperty(this, "html", {
     get: function() {
@@ -83,7 +68,28 @@ function PatternDocument() {
     newSection.render();
   };
 
-  //$("body").append(_html);
+  this.render = function() {
+    $("body").append(_html);
+    $("#btnCreateSection").on("click", btnCreateSection_click);
+  };
+
+  function btnCreateSection_click() {
+    var $sectionSelector = $("#selSectionType")[0];
+    var input = $sectionSelector.options[$sectionSelector.selectedIndex].value;
+    //alert(input);
+    if(input === "Text Section") {
+      pdoc.addTextSection();
+    }else if (input === "Pattern Section") {
+      pdoc.addPatternSection();
+    }
+    else {
+      alert("Invalid Section Type.");
+    }
+
+    return false;
+  }
+
+  this.render();
 }
 
 /** TextSection
@@ -165,6 +171,7 @@ function TextSection() {
   }
 }
 
+
 function PatternSection () {
   var thisSection = this;
 
@@ -176,19 +183,20 @@ function PatternSection () {
 
   Object.defineProperty(this, "html",{
     get: function() {
-      var _html = '<div id="' + this.id + '">' +
-        ' <h1 contenteditable="true">' + this.headerText + '</h1>' +
-        ' <p contentEditable="true">' + this.text + '</p>'+
+      var _html = '<div id="' + thisSection.id + '">' +
+        ' <h1 contenteditable="true">' + thisSection.headerText + '</h1>' +
+        ' <p contentEditable="true">' + thisSection.text + '</p>'+
         ' <input id="inputBoxCount" type="number" min="0" step="1">' +
         ' <button id="btnBoxCount" type="button">Create</button>' +
         ' <div id="counterBoxes"></div>' +
-        ' <div id="pb"></div></div>';
+        ' <div id="pb"></div>'+
+        ' </div>';
       return _html;
     }
   });
 
   var _counterBoxFactory = new CounterBoxFactory();
-  _counterBoxFactory.container = this;
+  _counterBoxFactory.container = thisSection;
   Object.defineProperty(this, "buttonFactory", {
     get: function() { return _counterBoxFactory }
   });
@@ -203,11 +211,14 @@ function PatternSection () {
 
   this.render = function() {
     $("#" + thisSection.patternDocument.id).append(thisSection.html);
+    //TextSection.prototype.render();
+    //$("#" + this.id).append(this.html);
     $("#" + thisSection.id + " > #btnBoxCount").on("click", btnBoxCount_Click);
   };
 
 }
 PatternSection.prototype = new TextSection();
+
 
 function CounterBoxFactory() {
   var thisFactory = this;
@@ -254,9 +265,16 @@ function CounterBoxFactory() {
     console.log(this);
     //empty the collection of buttons.
     _buttons = [];
-    var $buttonContainer = $("#" + event.target.parentElement.id + " > #counterBoxes");
+    var parentElementId = event.target.parentElement.id;
+    var $buttonContainer = $("#" + parentElementId + " > #counterBoxes");
     $buttonContainer.empty();
-    _pb = new ProgressBar.Line("#" + event.target.parentElement.id + " > #pb",{color:'#f00', strokeWidth: 1});
+    var $pbContainer  = $("#" + parentElementId + " > #pb");
+    $pbContainer.empty();
+    _pb = new ProgressBar.Line("#" + parentElementId + " > #pb",{color:'#f00', strokeWidth: 1});
+
+    //var $pbContainer  = $("#" + event.target.parentElement.id + " > #pb");
+    //$pbContainer.empty();
+    //_pb = new ProgressBar.Line($pbContainer,{color:'#f00', strokeWidth: 1});
 
     //create a new collection of buttons === boxcount param.
     for(var i = 1; i<=quantity; i++){
@@ -274,19 +292,19 @@ function CounterBoxFactory() {
   }
 }
 
-/**
+ /**
  *
  * @param labelText
  * @param forecolor
  * @param backcolor
  * @constructor
  */
-function CounterBox(labelText,forecolor,backcolor) {
+ function CounterBox(labelText,forecolor,backcolor) {
   var thisCounterBox = this;
 
-  Object.defineProperty(this,"id", {
-    get: function() {
-      return "box_" + thisCounterBox.labelText;
+   Object.defineProperty(this,"id", {
+       get: function() {
+       return "box_" + thisCounterBox.labelText;
     }
   });
 
@@ -366,11 +384,11 @@ function CounterBox(labelText,forecolor,backcolor) {
 
   this.getImageId = function() {
     return thisCounterBox.id + "_image"
-  };
+  };;
 
-  this.getImageDivId = function() {
-    return thisCounterBox.id + "_imageDiv"
-  };
+  //this.getImageDivId = function() {
+  //  return thisCounterBox.id + "_imageDiv"
+  //};
 
   this.click = function (event) {
     //todo: if later I want to update the objects, make sure to do it in counterbox.click.
@@ -408,7 +426,6 @@ function CounterBox(labelText,forecolor,backcolor) {
     section.buttonFactory.progressBar.animate((event.data.index -1) / thisCounterBox.factory.buttons.length);
 
     return false;
-    //return { index:_labelText, id: "box" + _labelText, markup: _counterBoxMarkup }
   }
 }
 
