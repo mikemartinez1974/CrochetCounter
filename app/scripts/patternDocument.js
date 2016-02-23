@@ -10,25 +10,33 @@
 //  Instructions
 //  Pattern
 
+/**
+ *
+ * @type {PatternDocument}
+ */
 var pdoc = new PatternDocument();
-
-
 
 /**
  *
  * @constructor
  */
 function PatternDocument() {
+  /**
+   *
+   * @type {string}
+   * @private
+   */
   var _id = "PatternDocument";
   Object.defineProperty(this,"id",{
     get: function() { return _id }
   });
 
   var _html = '<div id="PatternDocument">' +
-      ' <select id="selSectionType">' +
-      '   <option>Text Section</option>' +
-      '   <option>Pattern Section</option>'+
-      ' </select>' +
+      ' <h1 contenteditable="true">Pattern Title</h1>' +
+      '   <select id="selSectionType">' +
+      '     <option>Text Section</option>' +
+      '     <option>Pattern Section</option>'+
+      '   </select>' +
       ' <button id="btnCreateSection">Create New Section</button>' +
       '</div>';
   Object.defineProperty(this, "html", {
@@ -57,7 +65,8 @@ function PatternDocument() {
     newSection.headerText = "A new text section (" + this.sections.length + ")";
     newSection.text = "some text goes here.";
     newSection.index = _sections.push(newSection) - 1;
-    $("#PatternDocument").append(newSection.html);
+    //$("#PatternDocument").append(newSection.html);
+    newSection.render();
   };
 
   this.addPatternSection = function () {
@@ -69,7 +78,8 @@ function PatternDocument() {
   };
 
   this.render = function() {
-    $("body").append(_html);
+    var markup = markupGenerator();
+    $("body").append(markup);
     $("#btnCreateSection").on("click", btnCreateSection_click);
   };
 
@@ -152,7 +162,13 @@ function TextSection() {
   Object.defineProperty(this, "html", {
     get: function() {
       if(_html === null) {
-        _html = '<div id="' + this.id + '"><h1 contenteditable="true">' + this.headerText + '</h1><p contenteditable="true">' + this.text + '</p></div>';
+        _html = '<div id="' + this.id + '" style="border: solid lightgray 1px; width:100%;">' +
+        '     <h3> ' +
+        '       <span contenteditable="true">' + this.headerText + '</span>' +
+        '       <button id="copy"><span class="ui-icon ui-icon-newwin"></span></button><button id="min"><span class="ui-icon ui-icon-minus"></span></button><button id="close"><span class="ui-icon ui-icon-close"></span></button>' +
+        '     </h3>' +
+        '   <p contenteditable="true">' + this.text + '</p>' +
+        ' </div>';
       }
       return _html
     }
@@ -167,11 +183,17 @@ function TextSection() {
   });
 
   this.render = function() {
-    $("#" + this.patternDocument.id).append(this.html);
+    //$("#" + thisSection.patternDocument.id).append(thisSection.html);
+    var markup = markupGenerator(thisSection);
+    $("#PatternDocument").append(markup);
+    $("#" + thisSection.id).accordion({animate:200, collapsible:true, heightStyle:"content"});
   }
 }
 
-
+/**
+ *
+ * @constructor
+ */
 function PatternSection () {
   var thisSection = this;
 
@@ -184,7 +206,7 @@ function PatternSection () {
   Object.defineProperty(this, "html",{
     get: function() {
       var _html = '<div id="' + thisSection.id + '">' +
-        ' <h1 contenteditable="true">' + thisSection.headerText + '</h1>' +
+        ' <h2 contenteditable="true">' + thisSection.headerText + '</h2>' +
         ' <p contentEditable="true">' + thisSection.text + '</p>'+
         ' <input id="inputBoxCount" type="number" min="0" step="1">' +
         ' <button id="btnBoxCount" type="button">Create</button>' +
@@ -202,7 +224,6 @@ function PatternSection () {
   });
 
   function btnBoxCount_Click(event){
-    //var $inputQuantity = $("#" + thisSection.id + " > #inputBoxCount")[0];
     var $inputQuantity = $("#" + event.target.parentElement.id + " > #inputBoxCount")[0];
     var quantity = parseInt($inputQuantity.value);
     thisSection.buttonFactory.createButtons(quantity,event);
@@ -210,16 +231,18 @@ function PatternSection () {
   }
 
   this.render = function() {
-    $("#" + thisSection.patternDocument.id).append(thisSection.html);
-    //TextSection.prototype.render();
-    //$("#" + this.id).append(this.html);
-    $("#" + thisSection.id + " > #btnBoxCount").on("click", btnBoxCount_Click);
+    var markup = markupGenerator(thisSection);
+    $("#PatternDocument").append(markup);
+    $("#" + thisSection.id).accordion({animate:200, collapsible:true, heightStyle:"content"});
+    $("#" + thisSection.id + " #btnBoxCount").on("click", btnBoxCount_Click);
   };
-
 }
 PatternSection.prototype = new TextSection();
 
-
+/**
+ *
+ * @constructor
+ */
 function CounterBoxFactory() {
   var thisFactory = this;
 
@@ -266,24 +289,21 @@ function CounterBoxFactory() {
     //empty the collection of buttons.
     _buttons = [];
     var parentElementId = event.target.parentElement.id;
-    var $buttonContainer = $("#" + parentElementId + " > #counterBoxes");
+    var $buttonContainer = $("#" + parentElementId + " #counterBoxes");
     $buttonContainer.empty();
-    var $pbContainer  = $("#" + parentElementId + " > #pb");
+    var $pbContainer  = $("#" + parentElementId + " #pb");
     $pbContainer.empty();
-    _pb = new ProgressBar.Line("#" + parentElementId + " > #pb",{color:'#f00', strokeWidth: 1});
+    _pb = new ProgressBar.Line("#" + parentElementId + " #pb",{color:'#f00', strokeWidth: 1});
 
-    //var $pbContainer  = $("#" + event.target.parentElement.id + " > #pb");
-    //$pbContainer.empty();
-    //_pb = new ProgressBar.Line($pbContainer,{color:'#f00', strokeWidth: 1});
 
     //create a new collection of buttons === boxcount param.
     for(var i = 1; i<=quantity; i++){
       _buttons[i] = new CounterBox(i);
+      _buttons[i].index = i;
       _buttons[i].factory = thisFactory;
     }
 
     //add each button to the document.
-
     _buttons.forEach(function(counterbox) {
       $buttonContainer.append(counterbox.html);
       var selector = "#" + event.target.parentElement.id + " > #counterBoxes > #" + counterbox.id;
@@ -292,19 +312,19 @@ function CounterBoxFactory() {
   }
 }
 
- /**
+/**
  *
  * @param labelText
  * @param forecolor
  * @param backcolor
  * @constructor
  */
- function CounterBox(labelText,forecolor,backcolor) {
+function CounterBox(labelText,forecolor,backcolor) {
   var thisCounterBox = this;
 
-   Object.defineProperty(this,"id", {
+  Object.defineProperty(this,"id", {
        get: function() {
-       return "box_" + thisCounterBox.labelText;
+       return "box_" + thisCounterBox.index;
     }
   });
 
@@ -384,7 +404,7 @@ function CounterBoxFactory() {
 
   this.getImageId = function() {
     return thisCounterBox.id + "_image"
-  };;
+  };
 
   //this.getImageDivId = function() {
   //  return thisCounterBox.id + "_imageDiv"
@@ -392,7 +412,7 @@ function CounterBoxFactory() {
 
   this.click = function (event) {
     //todo: if later I want to update the objects, make sure to do it in counterbox.click.
-    var currentSectionId = $(this).parent().parent()[0].id;
+    var currentSectionId = $(this).parent().parent().parent()[0].id;
     var sectionIndex = currentSectionId.split("_")[1];
     var $thisButton = $("#" + currentSectionId + " #" + $(this)[0].id);
     var $imageDiv = $("#" + currentSectionId + " #" + $(this)[0].id + " #imageDiv");
@@ -429,13 +449,55 @@ function CounterBoxFactory() {
   }
 }
 
+/**
+ *
+ * @constructor
+ */
+function markupGenerator(section) {
+  var markup;
 
+  var outerHTML = '<div id="PatternDocument">' +
+    ' <h1 contenteditable="true">Pattern Title</h1>' +
+    '   <select id="selSectionType">' +
+    '     <option>Text Section</option>' +
+    '     <option>Pattern Section</option>'+
+    '   </select>' +
+    ' <button id="btnCreateSection">Create New Section</button>' +
+    '</div>';
 
+  if(section === undefined) {
+    markup = outerHTML;
+    return markup;
+  }
 
+  var textHTML = '<div id="' + section.id + '">' +
+    ' <h3> ' +
+    '   <span contenteditable="true">' + section.headerText + '</span>' +
+    '   <button id="copy"><span class="ui-icon ui-icon-newwin"></span></button><button id="min"><span class="ui-icon ui-icon-minus"></span></button><button id="close"><span class="ui-icon ui-icon-close"></span></button>' +
+    ' </h3>' +
+    ' <div>' +
+    '   <p contenteditable="true">' + section.text + '</p>';
 
+  var patternHTML = ' <input id="inputBoxCount" type="number" min="0" step="1">' +
+    ' <button id="btnBoxCount" type="button"><span class="ui-icon ui-icon-check"></span>Create</button>' +
+    ' <div id="counterBoxes"></div>' +
+    ' <div id="pb"></div>';
 
+  var closingTag ="</div></div>";
 
+  if(section instanceof PatternSection) {
+    markup = textHTML + patternHTML + closingTag;
+  }
+  else if (section instanceof TextSection) {
+    markup = textHTML + closingTag;
+  }
+  else {
+    markup = outerHTML;
+  }
 
+  return markup;
+
+}
 
 
 //function GuageSection() {
@@ -467,3 +529,6 @@ function CounterBoxFactory() {
 //
 //}
 //InstructionSection.prototype = new TextSection();
+
+
+
