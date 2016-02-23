@@ -31,28 +31,6 @@ function PatternDocument() {
     get: function() { return _id }
   });
 
-  var _html = '<div id="PatternDocument">' +
-      ' <h1 contenteditable="true">Pattern Title</h1>' +
-      '   <select id="selSectionType">' +
-      '     <option>Text Section</option>' +
-      '     <option>Pattern Section</option>'+
-      '   </select>' +
-      ' <button id="btnCreateSection">Create New Section</button>' +
-      '</div>';
-  Object.defineProperty(this, "html", {
-    get: function() {
-      return _html;
-    },
-    set: function(val) {
-      if(checkHTML(val)) {
-        _html = _val;
-      }
-      else {
-        throw new InvalidArgumentException("TextSection.html (set)","(string)HTML","value", val);
-      }
-    }
-  });
-
   var _sections = [];
   Object.defineProperty(this, "sections", {
     get: function() {
@@ -200,20 +178,6 @@ function PatternSection () {
   Object.defineProperty(this, "id",{
     get: function() {
       return "Pattern_" + this.index;
-    }
-  });
-
-  Object.defineProperty(this, "html",{
-    get: function() {
-      var _html = '<div id="' + thisSection.id + '">' +
-        ' <h2 contenteditable="true">' + thisSection.headerText + '</h2>' +
-        ' <p contentEditable="true">' + thisSection.text + '</p>'+
-        ' <input id="inputBoxCount" type="number" min="0" step="1">' +
-        ' <button id="btnBoxCount" type="button">Create</button>' +
-        ' <div id="counterBoxes"></div>' +
-        ' <div id="pb"></div>'+
-        ' </div>';
-      return _html;
     }
   });
 
