@@ -38,6 +38,13 @@ function PatternDocument() {
     }
   });
 
+  var _buttons = [];
+  Object.defineProperty(this, "buttons", {
+    get: function() {
+      return _buttons;
+    }
+  });
+
   this.addTextSection = function () {
     var newSection = new TextSection();
     newSection.headerText = "A new text section (" + this.sections.length + ")";
@@ -265,6 +272,8 @@ function CounterBoxFactory() {
       _buttons[i] = new CounterBox(i);
       _buttons[i].index = i;
       _buttons[i].factory = thisFactory;
+      var bindex = pdoc.buttons.push(_buttons[i]);
+      _buttons[i].text = bindex;
     }
 
     //add each button to the document.
@@ -283,7 +292,7 @@ function CounterBoxFactory() {
  * @param backcolor
  * @constructor
  */
-function CounterBox(labelText,forecolor,backcolor) {
+function CounterBox(text,forecolor,backcolor) {
   var thisCounterBox = this;
 
   Object.defineProperty(this,"id", {
@@ -292,13 +301,13 @@ function CounterBox(labelText,forecolor,backcolor) {
     }
   });
 
-  var _labelText = labelText;
-  Object.defineProperty(this, "labelText", {
+  var _text = text;
+  Object.defineProperty(this, "text", {
     get: function () {
-      return _labelText;
+      return _text;
     },
     set: function (val) {
-      _labelText = val;
+      _text = val;
     }
   });
 
@@ -345,11 +354,15 @@ function CounterBox(labelText,forecolor,backcolor) {
       var _labelDivStyle = "style='position:relative; width:100%; height:100%; text-align: center'";
       var _imageDivStyle = "style='position:relative; top:-30px; left:0; z-index:1; display:none;'";
       var _imageStyle = "style='height:25px; width:30px; margin: auto;'";
-      var _boxStyle = "style='float:left; color:" + thisCounterBox.foreColor + "; background-color: " + thisCounterBox.backColor + "; height: 25px; width: 30px; margin-top:2px; margin-left:2px; border: solid black 1px; padding-top:5px;'";
+      //var _boxStyle = "style='float:left; color:" + thisCounterBox.foreColor + "; background-color: " + thisCounterBox.backColor + "; height: 25px; width: 30px; margin-top:2px; margin-left:2px; border: solid black 1px; padding-top:5px;'";
+      var _boxStyle = "style='color:" + thisCounterBox.foreColor + "; background-color: " + thisCounterBox.backColor + "; height: 25px; width: 30px; margin-top:2px; margin-left:2px; border: solid black 1px; padding-top:5px;'";
       var _imageMarkup = "<img id='" + thisCounterBox.getImageId() + "' src='images/transCheck.png' " + _imageStyle + ">";
-      var _labeldiv = "<div id='labelDiv' " + _labelDivStyle + " >" + _labelText + "</div>";
+      var _labeldiv = "<div id='labelDiv' " + _labelDivStyle + " >" + _text + "</div>";
       var _imagediv = "<div id='imageDiv' " + _imageDivStyle + " >" + _imageMarkup + "</div>";
-      var _counterBoxMarkup = "<div id='" + thisCounterBox.id + "' " + _boxStyle + ">" + _labeldiv + _imagediv + "</div>";
+      var _inputA = "<div style='float:left;'>";
+      var _inputB = "<input type='text' style='margin-left: 3px; width:26px;font-size:.5em'></div>";
+      var _counterBoxMarkup = _inputA + "<div id='" + thisCounterBox.id + "' " + _boxStyle + ">" + _labeldiv + _imagediv + "</div>" + _inputB;
+      //var _counterBoxMarkup = "<div id='" + thisCounterBox.id + "' " + _boxStyle + ">" + _labeldiv + _imagediv + "</div>";
       return _counterBoxMarkup;
     }
   });
@@ -443,7 +456,7 @@ function markupGenerator(section) {
     '   <p contenteditable="true">' + section.text + '</p>';
 
   var patternHTML = ' <input id="inputBoxCount" type="number" min="0" step="1">' +
-    ' <button id="btnBoxCount" type="button"><span class="ui-icon ui-icon-check"></span>Create</button>' +
+    ' <button id="btnBoxCount" type="button">Create<span class="ui-icon ui-icon-check"></span></button>' +
     ' <div id="counterBoxes"></div>' +
     ' <div id="pb"></div>';
 
@@ -493,6 +506,3 @@ function markupGenerator(section) {
 //
 //}
 //InstructionSection.prototype = new TextSection();
-
-
-
